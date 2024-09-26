@@ -24,6 +24,7 @@ export function countPageLoads(url) {
 
 
 
+/** Read page loads from a file to memory */
 async function restorePageLoads() {
   try {
     const data = await fs.readFile(latestFile, "utf-8");
@@ -35,7 +36,7 @@ async function restorePageLoads() {
   }
 }
 
-
+/** Write page loads to a file */
 async function exportPageLoads() {
   const now = new Date();
   const fileName = path.join(
@@ -59,4 +60,52 @@ async function exportPageLoads() {
   // Update latest for restoration
   await fs.writeFile(latestFile, JSON.stringify(pageLoads, null, 2));
   console.log(`Exported page loads to ${fileName}`);
+}
+
+export function pageLoadStatsHandler(path, apiKeyHash) {
+  if (!apiKeyHash || apiKeyHash.length < 10) {
+    throw new Error("Stats enabled but no API key hash of minimum length 10 define!");
+  }
+  /**
+   * @param {Request} req
+  */
+  return function (req, next) {
+    let pathname = new URL(req.url).pathname;
+
+    if (pathname !== path) {
+      return next();
+    }
+
+    const key = req.headers.get("Authorization");
+    if (key === null) {
+      return new Response(
+        null,
+        { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="stats"' } }
+      )
+    }
+
+    const hasher = new Bun.CryptoHasher("sha256");
+    hasher.update(key);
+    const hash = hasher.digest("hex");
+    if (hash !== apiKeyHash) {
+      return new Response(
+        null,
+        { status: 401 }
+      )
+    }
+
+    const payload = JSON.stringify(pageLoads);
+    if (pageLoads === '{}') {
+      return new Response(
+        null,
+        { status: 503 }
+      )
+
+    }
+
+    return new Response(
+      payload,
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  };
 }

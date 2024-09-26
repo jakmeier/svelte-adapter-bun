@@ -7,7 +7,7 @@ import { initPageCount, countPageLoads } from "./loadCount.js";
 const hostname = env("HOST", "0.0.0.0");
 const port = parseInt(env("PORT", 3000));
 
-const { httpserver, websocket } = handler(build_options.assets ?? true);
+const { httpserver, websocket } = handler(build_options.assets ?? true, build_options.exposeStats ?? false);
 
 await initPageCount();
 

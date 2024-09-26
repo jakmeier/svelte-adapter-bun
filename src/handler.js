@@ -6,6 +6,7 @@ import path from "path";
 import sirv from "./sirv";
 import { existsSync } from "fs";
 import installPolyfills from "./polyfills";
+import { pageLoadStatsHandler } from "./loadCount";
 
 const __dirname = path.dirname(fileURLToPath(new URL(import.meta.url)));
 
@@ -21,12 +22,17 @@ const origin = env("ORIGIN", undefined);
 const address_header = env("ADDRESS_HEADER", "").toLowerCase();
 const protocol_header = env("PROTOCOL_HEADER", "").toLowerCase();
 const host_header = env("HOST_HEADER", "host").toLowerCase();
+const stats_api_key_hash = env("STATS_API_KEY_HASH", "").toLowerCase();
 
-/** @param {boolean} assets */
-export default function (assets) {
+/**
+ * @param {boolean} assets
+ * @param {boolean} stats
+ */
+export default function (assets, stats) {
   let handlers = [
     assets && serve(path.join(__dirname, "/client"), true),
     assets && serve(path.join(__dirname, "/prerendered")),
+    stats && pageLoadStatsHandler("/page-stats", stats_api_key_hash),
     ssr,
   ].filter(Boolean);
 

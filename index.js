@@ -26,6 +26,7 @@ export default function (opts = {}) {
     dynamic_origin = false,
     xff_depth = 1,
     assets = true,
+    exposeStats = false,
   } = opts;
   return {
     name: "svelte-adapter-bun",
@@ -65,7 +66,7 @@ export default function (opts = {}) {
           MANIFEST: "./manifest.js",
           ENV_PREFIX: JSON.stringify(envPrefix),
           dotENV_PREFIX: envPrefix,
-          BUILD_OPTIONS: JSON.stringify({ development, dynamic_origin, xff_depth, assets }),
+          BUILD_OPTIONS: JSON.stringify({ development, dynamic_origin, xff_depth, assets, exposeStats }),
         },
       });
 
