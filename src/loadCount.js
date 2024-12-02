@@ -54,7 +54,7 @@ async function exportPageLoads() {
   }
 
   // Add a data record for today
-  dailyData.push({ timestamp: now.toISOString(), pageLoads });
+  dailyData.push({ timestamp: now.toISOString(), pageLoads: { ...pageLoads } });
   await fs.writeFile(fileName, JSON.stringify(dailyData, null, 2));
 
   // Update latest for restoration
