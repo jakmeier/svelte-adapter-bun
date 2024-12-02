@@ -6,7 +6,7 @@ import path from "path";
 import sirv from "./sirv";
 import { existsSync } from "fs";
 import installPolyfills from "./polyfills";
-import { pageLoadStatsHandler } from "./loadCount";
+import { pageLoadStatsHandler, cullPageLoadStatsHandler } from "./loadCount";
 
 const __dirname = path.dirname(fileURLToPath(new URL(import.meta.url)));
 
@@ -33,6 +33,7 @@ export default function (assets, stats) {
     assets && serve(path.join(__dirname, "/client"), true),
     assets && serve(path.join(__dirname, "/prerendered")),
     stats && pageLoadStatsHandler("/page-stats", stats_api_key_hash),
+    stats && cullPageLoadStatsHandler("/cull-page-stats", stats_api_key_hash),
     ssr,
   ].filter(Boolean);
 

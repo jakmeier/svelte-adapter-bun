@@ -7,6 +7,7 @@ let pageLoads = {};
 const dataFolder = env("ACCESS_STATS", "access-stats");
 const intervalSeconds = Number(env("STATS_INTERVAL", "3600"));
 const latestFile = path.join(dataFolder, "latest.json");
+const cullCountThreshold = Number(env("CULL_COUNT_THRESHOLD", "100"));
 
 export async function initPageCount() {
   if (!await fs.exists(dataFolder)) {
@@ -62,7 +63,7 @@ async function exportPageLoads() {
   console.log(`Exported page loads to ${fileName}`);
 }
 
-export function pageLoadStatsHandler(path, apiKeyHash) {
+function basicAuthProtectedHandler(path, apiKeyHash, handler) {
   if (!apiKeyHash || apiKeyHash.length < 10) {
     throw new Error("Stats enabled but no API key hash of minimum length 10 define!");
   }
@@ -94,6 +95,12 @@ export function pageLoadStatsHandler(path, apiKeyHash) {
       )
     }
 
+    return handler();
+  };
+}
+
+export function pageLoadStatsHandler(path, apiKeyHash) {
+  return basicAuthProtectedHandler(path, apiKeyHash, () => {
     const payload = JSON.stringify(pageLoads);
     if (pageLoads === '{}') {
       return new Response(
@@ -107,5 +114,26 @@ export function pageLoadStatsHandler(path, apiKeyHash) {
       payload,
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
-  };
+  });
+}
+
+export function cullPageLoadStatsHandler(path, apiKeyHash) {
+  return basicAuthProtectedHandler(path, apiKeyHash, () => {
+
+    const lengthBefore = Object.keys(pageLoads).length;
+    for (const [key, value] of Object.entries(pageLoads)) {
+      if (typeof value === 'number' && value < cullCountThreshold) {
+        delete pageLoads[key];
+      }
+    }
+    const lengthAfter = Object.keys(pageLoads).length;
+    const culled = lengthBefore - lengthAfter;
+
+    const payload = JSON.stringify({ culled, lengthBefore, lengthAfter });
+
+    return new Response(
+      payload,
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  });
 }
